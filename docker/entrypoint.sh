@@ -4,9 +4,23 @@
 #- https://github.com/Caiyeon/goldfish/blob/master/vagrant/policies/goldfish.hcl
 #- https://github.com/Caiyeon/goldfish/wiki/Production-Deployment#1-prepare-vault-only-needs-to-be-done-once
 
+
+function signalHandler() {
+ echo "Caught signal"
+ kill -TERM "$childPid"
+}
+
+trap signalHandler SIGTERM SIGINT
+
 # Vault container config
-export VAULT_ADDR="http://vault:8200"
-export VAULT_TOKEN="goldfish"
+DEFAULT_ADDR="http://127.0.0.1:8200"
+DEFAULT_TOKEN="goldfish"
+_VAULT_ADDR="${VAULT_ADDR:-$DEFAULT_ADDR}"
+_VAULT_TOKEN="${VAULT_TOKEN:-$DEFAULT_TOKEN}"
+
+WRAP_TTL="${WRAP_TTL:-3600}"
+export VAULT_ADDR="$_VAULT_ADDR"
+export VAULT_TOKEN="$_VAULT_TOKEN"
 
 #One place for curl options
 CURL_OPT="-s -H X-Vault-Token:${VAULT_TOKEN}"
@@ -27,6 +41,11 @@ curl ${CURL_OPT} -X POST ${VAULT_ADDR}/v1/transit/keys/goldfish
 curl ${CURL_OPT} ${VAULT_ADDR}/v1/secret/goldfish -d '{"DefaultSecretPath":"secret/", "TransitBackend":"transit", "UserTransitKey":"usertransit", "ServerTransitKey":"goldfish", "BulletinPath":"secret/bulletins/"}'
 
 #Generate token to start Goldfish with
-WRAPPED_TOKEN=`curl ${CURL_OPT} --header "X-Vault-Wrap-TTL: 20" -X POST ${VAULT_ADDR}/v1/auth/approle/role/goldfish/secret-id | jq -r .wrap_info.token`
+WRAPPED_TOKEN=`curl ${CURL_OPT} --header "X-Vault-Wrap-TTL: $WRAP_TTL" -X POST ${VAULT_ADDR}/v1/auth/approle/role/goldfish/secret-id | jq -r .wrap_info.token`
 
-/app/goldfish -config=/app/docker.hcl -token=${WRAPPED_TOKEN}
+/app/goldfish -config=/app/docker.hcl -token=${WRAPPED_TOKEN}  &
+childPid=$!
+wait "$childPid"
+sleep 5
+echo "Exiting....."
+
