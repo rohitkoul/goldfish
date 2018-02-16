@@ -1,3 +1,19 @@
+# Docker Build
+
+```bash
+if [ ! -z $http_proxy ]; then
+export PROXY_ARGS="--build-arg http_proxy=$http_proxy --build-arg https_proxy=$http_proxy"
+fi
+docker build $PROXY_ARGS -t goldfish:0.8.0 .
+```
+
+# Sample Docker Run
+
+```bash
+docker run --name=goldfish -e VAULT_TOKEN="567d0eee-13d5-c484-525d-1a253b3a1f70" --net=host goldfish:0.8.0
+```
+
+
 # Running with docker-compose
 
 Quickly start up a Vault and Goldfish stack using [docker-compose](https://github.com/docker/compose). This is meant as a template for deploying to different orchestration environments for production use.
