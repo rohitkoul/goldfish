@@ -13,11 +13,12 @@ listener "tcp" {
 vault {
 	# [Required] [Format: "protocol://address:port"]
 	# This is vault's address. Vault must be up before goldfish is deployed!
-	address         = "http://vault:8200"
+	# address         = "http://vault:8200"
+	address         = "http://127.0.0.1:8200"
 
 	# [Optional] [Default: 0] [Allowed values: 0, 1]
 	# Set this to 1 to skip verifying the certificate of vault (e.g. self-signed certs)
-	tls_skip_verify = 0
+	tls_skip_verify = 1
 
 	# [Required] [Default: "secret/goldfish"]
 	# This should be a generic secret endpoint where runtime settings are stored
